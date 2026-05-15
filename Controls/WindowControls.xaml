@@ -1,15 +1,9 @@
 <UserControl x:Class="TradingBrowser.Controls.WindowControls"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
- xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- Height="38" Width="138">
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="46"/>
-            <ColumnDefinition Width="46"/>
-            <ColumnDefinition Width="46"/>
-        </Grid.ColumnDefinitions>
-        <Button x:Name="MinimizeButton" Grid.Column="0" Content="—" Background="Transparent" Foreground="White" BorderThickness="0"/>
-        <Button x:Name="MaximizeButton" Grid.Column="1" Content="□" Background="Transparent" Foreground="White" BorderThickness="0"/>
-        <Button x:Name="CloseButton" Grid.Column="2" Content="✕" Background="Transparent" Foreground="White" BorderThickness="0"/>
-    </Grid>
-</UserControl>
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Width="138" Height="36">
+<Grid>
+<Grid.ColumnDefinitions><ColumnDefinition Width="46"/><ColumnDefinition Width="46"/><ColumnDefinition Width="46"/></Grid.ColumnDefinitions>
+<Button x:Name="MinimizeButton" Grid.Column="0" Content="—" Background="Transparent" Foreground="White" BorderThickness="0"/>
+<Button x:Name="MaximizeButton" Grid.Column="1" Content="□" Background="Transparent" Foreground="White" BorderThickness="0"/>
+<Button x:Name="CloseButton" Grid.Column="2" Content="✕" Background="Transparent" Foreground="White" BorderThickness="0"/>
+</Grid></UserControl>
