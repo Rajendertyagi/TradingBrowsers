@@ -1,6 +1,6 @@
 using Microsoft.Web.WebView2.Wpf;
 using System;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -11,13 +11,10 @@ public partial class MainWindow : Window
 {
     private const string HomeUrl = "https://www.tradingview.com/";
 
-    private readonly List<WebView2> _browsers = new();
-
     public MainWindow()
     {
         InitializeComponent();
         Loaded += MainWindow_Loaded;
-        PreviewKeyDown += MainWindow_PreviewKeyDown;
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -25,69 +22,130 @@ public partial class MainWindow : Window
         await CreateNewTab(HomeUrl);
     }
 
-    private async System.Threading.Tasks.Task CreateNewTab(string url)
+    private async Task CreateNewTab(string url)
     {
+        BrowserHost.Children.Clear();
+
         var browser = new WebView2();
+        BrowserHost.Children.Add(browser);
+
         await browser.EnsureCoreWebView2Async();
 
-        browser.NavigationStarting += (_, _) => { };
-        browser.NavigationCompleted += (_, _) =>
-        {
-            if (browser.Source != null)
-            {
-                var tab = GetTabForBrowser(browser);
-                if (tab != null)
-                    tab.Header = GetTabHeader(browser, browser.CoreWebView2.DocumentTitle);
-
-                if (browser == CurrentBrowser)
-                    AddressBar.Text = browser.Source.ToString();
-            }
-        };
+        // Apply selected user agent
+        UserAgentManager.ApplyTo(browser);
 
         browser.Source = new Uri(url);
 
-        _browsers.Add(browser);
-
-        var tabItem = new TabItem
+        browser.NavigationCompleted += (sender, args) =>
         {
-            Header = GetTabHeader(browser, "New Tab"),
-            Tag = browser
+            if (browser.Source != null)
+            {
+                AddressBar.Text = browser.Source.ToString();
+            }
         };
-
-        Tabs.Items.Add(tabItem);
-        Tabs.SelectedItem = tabItem;
     }
 
-    private object GetTabHeader(WebView2 browser, string title)
+    private WebView2? GetCurrentBrowser()
     {
-        var panel = new StackPanel
-        {
-            Orientation = Orientation.Horizontal
-        };
+        if (BrowserHost.Children.Count == 0)
+            return null;
 
-        panel.Children.Add(new TextBlock
-        {
-            Text = string.IsNullOrWhiteSpace(title) ? "New Tab" : title,
-            Foreground = System.Windows.Media.Brushes.White,
-            Margin = new Thickness(0, 0, 6, 0)
-        });
-
-        var closeButton = new Button
-        {
-            Content = "×",
-            Width = 18,
-            Height = 18,
-            Padding = new Thickness(0),
-            Tag = browser
-        };
-        closeButton.Click += CloseTabButton_Click;
-
-        panel.Children.Add(closeButton);
-        return panel;
+        return BrowserHost.Children[0] as WebView2;
     }
 
-    private TabItem? GetTabForBrowser(WebView2 browser)
+    private void Navigate()
     {
-        foreach (TabItem item in Tabs.Items)
+        var browser = GetCurrentBrowser();
+
+        if (browser == null || browser.CoreWebView2 == null)
+            return;
+
+        string text = AddressBar.Text.Trim();
+
+        if (string.IsNullOrWhiteSpace(text))
+            return;
+
+        bool hasHttp =
+            text.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            text.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+
+        if (!hasHttp)
         {
-        if (Keyboard.Mo
+            if (text.Contains("."))
+            {
+                text = "https://" + text;
+            }
+            else
+            {
+                text = "https://www.google.com/search?q=" +
+                       Uri.EscapeDataString(text);
+            }
+        }
+
+        browser.CoreWebView2.Navigate(text);
+    }
+
+    private void Go_Click(object sender, RoutedEventArgs e)
+    {
+        Navigate();
+    }
+
+    private void AddressBar_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            Navigate();
+            e.Handled = true;
+        }
+    }
+
+    private void Back_Click(object sender, RoutedEventArgs e)
+    {
+        var browser = GetCurrentBrowser();
+
+        if (browser != null && browser.CanGoBack)
+            browser.GoBack();
+    }
+
+    private void Forward_Click(object sender, RoutedEventArgs e)
+    {
+        var browser = GetCurrentBrowser();
+
+        if (browser != null && browser.CanGoForward)
+            browser.GoForward();
+    }
+
+    private void Refresh_Click(object sender, RoutedEventArgs e)
+    {
+        var browser = GetCurrentBrowser();
+
+        if (browser != null)
+            browser.Reload();
+    }
+
+    private void Stop_Click(object sender, RoutedEventArgs e)
+    {
+        var browser = GetCurrentBrowser();
+
+        if (browser != null && browser.CoreWebView2 != null)
+            browser.CoreWebView2.Stop();
+    }
+
+    private void Home_Click(object sender, RoutedEventArgs e)
+    {
+        var browser = GetCurrentBrowser();
+
+        if (browser != null && browser.CoreWebView2 != null)
+            browser.CoreWebView2.Navigate(HomeUrl);
+    }
+
+    private async void NewTabButton_Click(object sender, RoutedEventArgs e)
+    {
+        await CreateNewTab(HomeUrl);
+    }
+
+    private void Tabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // Placeholder required by MainWindow.xaml.
+    }
+}
