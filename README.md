@@ -1,1 +1,3 @@
-# Compact Chrome-style Trading Browser\n
+# TTBrowserGPT
+
+Compact Chrome-style trading browser.
