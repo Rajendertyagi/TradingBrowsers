@@ -1,7 +1,9 @@
 using Microsoft.Web.WebView2.Wpf;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace TradingBrowser;
@@ -9,6 +11,12 @@ namespace TradingBrowser;
 public partial class MainWindow : Window
 {
     private const string HomeUrl = "https://www.tradingview.com/";
+
+    // Stores all open tabs and their WebView2 controls
+    private readonly List<WebView2> _tabs = new();
+
+    // Index of the currently selected tab
+    private int _currentTabIndex = -1;
 
     public MainWindow()
     {
@@ -18,15 +26,20 @@ public partial class MainWindow : Window
 
     private async void MainWindow_Loaded(object? sender, RoutedEventArgs e)
     {
-        await InitializeBrowserAsync();
+        if (_tabs.Count == 0)
+            await CreateNewTabAsync(HomeUrl);
     }
 
-    private async Task InitializeBrowserAsync()
-    {
-        BrowserHost.Children.Clear();
+    // Returns the currently active browser
+    private WebView2? Browser =>
+        (_currentTabIndex >= 0 && _currentTabIndex < _tabs.Count)
+            ? _tabs[_currentTabIndex]
+            : null;
 
+    // Creates a real new tab
+    private async Task CreateNewTabAsync(string url)
+    {
         var browser = new WebView2();
-        BrowserHost.Children.Add(browser);
 
         await browser.EnsureCoreWebView2Async();
 
@@ -36,19 +49,36 @@ public partial class MainWindow : Window
             "AppleWebKit/537.36 (KHTML, like Gecko) " +
             "Chrome/136.0.0.0 Safari/537.36";
 
-        browser.Source = new Uri(HomeUrl);
-
         browser.NavigationCompleted += (_, _) =>
         {
-            if (browser.Source != null)
+            if (Browser == browser && browser.Source != null)
                 AddressBar.Text = browser.Source.ToString();
         };
+
+        _tabs.Add(browser);
+        _currentTabIndex = _tabs.Count - 1;
+
+        // Show only the active tab
+        BrowserHost.Children.Clear();
+        BrowserHost.Children.Add(browser);
+
+        browser.Source = new Uri(url);
     }
 
-    private WebView2? Browser =>
-        BrowserHost.Children.Count > 0
-            ? BrowserHost.Children[0] as WebView2
-            : null;
+    // Switches to an existing tab
+    private void ShowTab(int index)
+    {
+        if (index < 0 || index >= _tabs.Count)
+            return;
+
+        _currentTabIndex = index;
+
+        BrowserHost.Children.Clear();
+        BrowserHost.Children.Add(_tabs[index]);
+
+        if (_tabs[index].Source != null)
+            AddressBar.Text = _tabs[index].Source.ToString();
+    }
 
     private void Navigate()
     {
@@ -103,11 +133,10 @@ public partial class MainWindow : Window
         Browser?.CoreWebView2?.Navigate(HomeUrl);
     }
 
-    // Clicking + opens a new independent browser window
-    private void NewTabButton_Click(object sender, RoutedEventArgs e)
+    // Clicking + creates a real new tab in the same window
+    private async void NewTabButton_Click(object sender, RoutedEventArgs e)
     {
-        var newWindow = new MainWindow();
-        newWindow.Show();
+        await CreateNewTabAsync(HomeUrl);
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
