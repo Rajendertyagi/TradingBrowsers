@@ -1,135 +1,106 @@
-using Microsoft.Web.WebView2.Wpf;
-using System;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
+<Window x:Class="TradingBrowser.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Trading Browser"
+        Width="1400"
+        Height="900"
+        Background="#202124"
+        WindowStartupLocation="CenterScreen">
 
-namespace TradingBrowser;
+    <DockPanel LastChildFill="True">
 
-public partial class MainWindow : Window
-{
-    private const string HomeUrl = "https://www.tradingview.com/";
+        <!-- Tab Strip -->
+        <Border DockPanel.Dock="Top"
+                Background="#202124"
+                BorderBrush="#3C4043"
+                BorderThickness="0,0,0,1">
 
-    public MainWindow()
-    {
-        InitializeComponent();
-        Loaded += MainWindow_Loaded;
-    }
+            <Grid Height="38">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="40" />
+                </Grid.ColumnDefinitions>
 
-    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
-    {
-        await CreateNewTab(HomeUrl);
-    }
+                <TabControl x:Name="Tabs"
+                            Grid.Column="0"
+                            Background="#202124"
+                            BorderThickness="0"
+                            SelectionChanged="Tabs_SelectionChanged" />
 
-    private async Task CreateNewTab(string url)
-    {
-        BrowserHost.Children.Clear();
+                <Button x:Name="NewTabButton"
+                        Grid.Column="1"
+                        Content="+"
+                        FontSize="18"
+                        FontWeight="Bold"
+                        Background="#202124"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Click="NewTabButton_Click" />
+            </Grid>
+        </Border>
 
-        var browser = new WebView2();
-        BrowserHost.Children.Add(browser);
+        <!-- Navigation Bar -->
+        <Border DockPanel.Dock="Top"
+                Background="#292A2D"
+                Padding="8"
+                BorderBrush="#3C4043"
+                BorderThickness="0,0,0,1">
 
-        await browser.EnsureCoreWebView2Async();
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-        // Apply custom user agent if available
-        UserAgentManager.ApplyTo(browser);
+                <Button Grid.Column="0"
+                        Content="←"
+                        Width="36"
+                        Margin="2"
+                        Click="Back_Click" />
 
-        browser.Source = new Uri(url);
+                <Button Grid.Column="1"
+                        Content="→"
+                        Width="36"
+                        Margin="2"
+                        Click="Forward_Click" />
 
-        browser.NavigationCompleted += (sender, args) =>
-        {
-            if (browser.Source != null)
-            {
-                AddressBar.Text = browser.Source.ToString();
-            }
-        };
-    }
+                <Button Grid.Column="2"
+                        Content="⟳"
+                        Width="36"
+                        Margin="2"
+                        Click="Refresh_Click" />
 
-    private WebView2? GetCurrentBrowser()
-    {
-        if (BrowserHost.Children.Count == 0)
-            return null;
+                <Button Grid.Column="3"
+                        Content="✕"
+                        Width="36"
+                        Margin="2"
+                        Click="Stop_Click" />
 
-        return BrowserHost.Children[0] as WebView2;
-    }
+                <Button Grid.Column="4"
+                        Content="⌂"
+                        Width="36"
+                        Margin="2"
+                        Click="Home_Click" />
 
-    private void Navigate()
-    {
-        var browser = GetCurrentBrowser();
+                <TextBox x:Name="AddressBar"
+                         Grid.Column="5"
+                         Margin="8,0,0,0"
+                         Height="32"
+                         VerticalContentAlignment="Center"
+                         Background="#303134"
+                         Foreground="White"
+                         BorderBrush="#5F6368"
+                         KeyDown="AddressBar_KeyDown" />
+            </Grid>
+        </Border>
 
-        if (browser?.CoreWebView2 == null)
-            return;
+        <!-- Browser Area -->
+        <Grid x:Name="BrowserHost"
+              Background="#202124" />
 
-        string text = AddressBar.Text.Trim();
-
-        if (string.IsNullOrWhiteSpace(text))
-            return;
-
-        if (!text.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-            !text.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-        {
-            if (text.Contains("."))
-                text = "https://" + text;
-            else
-                text = "https://www.google.com/search?q=" +
-                       Uri.EscapeDataString(text);
-        }
-
-        browser.CoreWebView2.Navigate(text);
-    }
-
-    private void Go_Click(object sender, RoutedEventArgs e)
-    {
-        Navigate();
-    }
-
-    private void AddressBar_KeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter)
-        {
-            Navigate();
-            e.Handled = true;
-        }
-    }
-
-    private void Back_Click(object sender, RoutedEventArgs e)
-    {
-        var browser = GetCurrentBrowser();
-
-        if (browser?.CanGoBack == true)
-            browser.GoBack();
-    }
-
-    private void Forward_Click(object sender, RoutedEventArgs e)
-    {
-        var browser = GetCurrentBrowser();
-
-        if (browser?.CanGoForward == true)
-            browser.GoForward();
-    }
-
-    private void Refresh_Click(object sender, RoutedEventArgs e)
-    {
-        GetCurrentBrowser()?.Reload();
-    }
-
-    private void Stop_Click(object sender, RoutedEventArgs e)
-    {
-        GetCurrentBrowser()?.CoreWebView2?.Stop();
-    }
-
-    private void Home_Click(object sender, RoutedEventArgs e)
-    {
-        GetCurrentBrowser()?.CoreWebView2?.Navigate(HomeUrl);
-    }
-
-    private async void NewTabButton_Click(object sender, RoutedEventArgs e)
-    {
-        await CreateNewTab(HomeUrl);
-    }
-
-    private void Tabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        // Placeholder for future tab-switching logic.
-    }
-}
+    </DockPanel>
+</Window>
