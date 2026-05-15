@@ -1,3 +1,6 @@
+using Microsoft.Web.WebView2.Wpf;
+using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -10,21 +13,62 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        Loaded += MainWindow_Loaded;
+    }
 
-        // Show the home URL in the address bar.
-        Loaded += (_, _) =>
+    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        await CreateBrowserAsync(HomeUrl);
+    }
+
+    private async Task CreateBrowserAsync(string url)
+    {
+        BrowserHost.Children.Clear();
+
+        var browser = new WebView2();
+        BrowserHost.Children.Add(browser);
+
+        await browser.EnsureCoreWebView2Async();
+
+        // Spoof Chrome user agent
+        browser.CoreWebView2.Settings.UserAgent =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+            "AppleWebKit/537.36 (KHTML, like Gecko) " +
+            "Chrome/136.0.0.0 Safari/537.36";
+
+        browser.Source = new Uri(url);
+
+        browser.NavigationCompleted += (_, _) =>
         {
-            if (AddressBar != null)
-                AddressBar.Text = HomeUrl;
+            if (browser.Source != null)
+                AddressBar.Text = browser.Source.ToString();
         };
     }
 
+    private WebView2? Browser =>
+        BrowserHost.Children.Count > 0
+            ? BrowserHost.Children[0] as WebView2
+            : null;
+
     private void Navigate()
     {
-        // Placeholder implementation.
-        // Replace with WebView2 integration once package resolution is working.
-        if (AddressBar != null && string.IsNullOrWhiteSpace(AddressBar.Text))
-            AddressBar.Text = HomeUrl;
+        if (Browser?.CoreWebView2 == null)
+            return;
+
+        string text = AddressBar.Text.Trim();
+        if (string.IsNullOrWhiteSpace(text))
+            return;
+
+        if (!text.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+            !text.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            text = text.Contains(".")
+                ? "https://" + text
+                : "https://www.google.com/search?q=" +
+                  Uri.EscapeDataString(text);
+        }
+
+        Browser.CoreWebView2.Navigate(text);
     }
 
     private void AddressBar_KeyDown(object sender, KeyEventArgs e)
@@ -38,39 +82,40 @@ public partial class MainWindow : Window
 
     private void Back_Click(object sender, RoutedEventArgs e)
     {
-        // Placeholder
+        if (Browser?.CanGoBack == true)
+            Browser.GoBack();
     }
 
     private void Forward_Click(object sender, RoutedEventArgs e)
     {
-        // Placeholder
+        if (Browser?.CanGoForward == true)
+            Browser.GoForward();
     }
 
     private void Refresh_Click(object sender, RoutedEventArgs e)
     {
-        // Placeholder
+        Browser?.Reload();
     }
 
     private void Home_Click(object sender, RoutedEventArgs e)
     {
-        if (AddressBar != null)
-            AddressBar.Text = HomeUrl;
+        Browser?.CoreWebView2?.Navigate(HomeUrl);
     }
 
-    private void NewTabButton_Click(object sender, RoutedEventArgs e)
+    private async void NewTabButton_Click(object sender, RoutedEventArgs e)
     {
-        if (AddressBar != null)
-            AddressBar.Text = HomeUrl;
+        // Simplified: replaces current tab.
+        // Full multi-tab support can be added later.
+        await CreateBrowserAsync(HomeUrl);
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.ClickCount == 2)
         {
-            WindowState =
-                WindowState == WindowState.Maximized
-                    ? WindowState.Normal
-                    : WindowState.Maximized;
+            WindowState = WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
         }
         else
         {
