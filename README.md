@@ -1,1 +1,1 @@
-# Trading Browser Full Chrome-Style Project
+# Compact Chrome-style Trading Browser\n

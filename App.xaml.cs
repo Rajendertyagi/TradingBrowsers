@@ -1,7 +1,3 @@
 using System.Windows;
-
 namespace TradingBrowser;
-
-public partial class App : Application
-{
-}
+public partial class App : Application { }
