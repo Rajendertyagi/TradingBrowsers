@@ -130,4 +130,10 @@ public partial class MainWindow : Window
     {
         await CreateNewTab(HomeUrl);
     }
+
+    private void Tabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // Placeholder handler required by MainWindow.xaml.
+        // Multi-tab switching logic can be added here later.
+    }
 }
