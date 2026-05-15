@@ -1,4 +1,4 @@
-name: Build Windows Portable Browser
+name: Build TTBrowserGPT
 
 on:
   push:
@@ -28,22 +28,24 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore dependencies
-        run: dotnet restore TradingBrowser.csproj
+        run: dotnet restore TTBrowserGPT.csproj
 
       - name: Build project
-        run: dotnet build TradingBrowser.csproj -c Release --no-restore
+        run: dotnet build TTBrowserGPT.csproj -c Release --no-restore
 
       - name: Publish self-contained build
         run: >
-          dotnet publish TradingBrowser.csproj
+          dotnet publish TTBrowserGPT.csproj
           -c Release
           -r win-x64
           --self-contained true
           -p:PublishSingleFile=false
+          -p:PublishReadyToRun=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
           -o publish
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TradingBrowser-win-x64-self-contained
+          name: TTBrowserGPT-win-x64-self-contained
           path: publish/
