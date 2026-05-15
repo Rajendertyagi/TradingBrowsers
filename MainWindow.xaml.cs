@@ -30,7 +30,7 @@ public partial class MainWindow : Window
 
         await browser.EnsureCoreWebView2Async();
 
-        // Chrome user agent
+        // Chrome-like user agent
         browser.CoreWebView2.Settings.UserAgent =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
             "AppleWebKit/537.36 (KHTML, like Gecko) " +
@@ -103,9 +103,11 @@ public partial class MainWindow : Window
         Browser?.CoreWebView2?.Navigate(HomeUrl);
     }
 
-    private async void NewTabButton_Click(object sender, RoutedEventArgs e)
+    // Clicking + opens a new independent browser window
+    private void NewTabButton_Click(object sender, RoutedEventArgs e)
     {
-        await InitializeBrowserAsync();
+        var newWindow = new MainWindow();
+        newWindow.Show();
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
