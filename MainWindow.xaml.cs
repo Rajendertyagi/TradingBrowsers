@@ -1,10 +1,8 @@
-using Microsoft.Web.WebView2.Wpf;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
+using TradingBrowser.Services;
 
 namespace TradingBrowser;
 
@@ -12,11 +10,7 @@ public partial class MainWindow : Window
 {
     private const string HomeUrl = "https://www.tradingview.com/";
 
-    // Stores all open tabs and their WebView2 controls
-    private readonly List<WebView2> _tabs = new();
-
-    // Index of the currently selected tab
-    private int _currentTabIndex = -1;
+    private TabManager? _tabManager;
 
     public MainWindow()
     {
@@ -26,63 +20,19 @@ public partial class MainWindow : Window
 
     private async void MainWindow_Loaded(object? sender, RoutedEventArgs e)
     {
-        if (_tabs.Count == 0)
-            await CreateNewTabAsync(HomeUrl);
-    }
+        // Create the tab manager after the XAML controls are initialized.
+        _tabManager = new TabManager(
+            BrowserHost,
+            url => AddressBar.Text = url
+        );
 
-    // Returns the currently active browser
-    private WebView2? Browser =>
-        (_currentTabIndex >= 0 && _currentTabIndex < _tabs.Count)
-            ? _tabs[_currentTabIndex]
-            : null;
-
-    // Creates a real new tab
-    private async Task CreateNewTabAsync(string url)
-    {
-        var browser = new WebView2();
-
-        await browser.EnsureCoreWebView2Async();
-
-        // Chrome-like user agent
-        browser.CoreWebView2.Settings.UserAgent =
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-            "AppleWebKit/537.36 (KHTML, like Gecko) " +
-            "Chrome/136.0.0.0 Safari/537.36";
-
-        browser.NavigationCompleted += (_, _) =>
-        {
-            if (Browser == browser && browser.Source != null)
-                AddressBar.Text = browser.Source.ToString();
-        };
-
-        _tabs.Add(browser);
-        _currentTabIndex = _tabs.Count - 1;
-
-        // Show only the active tab
-        BrowserHost.Children.Clear();
-        BrowserHost.Children.Add(browser);
-
-        browser.Source = new Uri(url);
-    }
-
-    // Switches to an existing tab
-    private void ShowTab(int index)
-    {
-        if (index < 0 || index >= _tabs.Count)
-            return;
-
-        _currentTabIndex = index;
-
-        BrowserHost.Children.Clear();
-        BrowserHost.Children.Add(_tabs[index]);
-
-        if (_tabs[index].Source != null)
-            AddressBar.Text = _tabs[index].Source.ToString();
+        // Open the first tab.
+        await _tabManager.CreateTabAsync(HomeUrl);
     }
 
     private void Navigate()
     {
-        if (Browser?.CoreWebView2 == null)
+        if (_tabManager == null)
             return;
 
         string text = AddressBar.Text.Trim();
@@ -90,16 +40,22 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(text))
             return;
 
+        // If the text is not already a URL, treat it as either a domain or a search query.
         if (!text.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
             !text.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
-            text = text.Contains(".")
-                ? "https://" + text
-                : "https://www.google.com/search?q=" +
-                  Uri.EscapeDataString(text);
+            if (text.Contains("."))
+            {
+                text = "https://" + text;
+            }
+            else
+            {
+                text = "https://www.google.com/search?q=" +
+                       Uri.EscapeDataString(text);
+            }
         }
 
-        Browser.CoreWebView2.Navigate(text);
+        _tabManager.Navigate(text);
     }
 
     private void AddressBar_KeyDown(object sender, KeyEventArgs e)
@@ -113,30 +69,31 @@ public partial class MainWindow : Window
 
     private void Back_Click(object sender, RoutedEventArgs e)
     {
-        if (Browser?.CanGoBack == true)
-            Browser.GoBack();
+        _tabManager?.Back();
     }
 
     private void Forward_Click(object sender, RoutedEventArgs e)
     {
-        if (Browser?.CanGoForward == true)
-            Browser.GoForward();
+        _tabManager?.Forward();
     }
 
     private void Refresh_Click(object sender, RoutedEventArgs e)
     {
-        Browser?.Reload();
+        _tabManager?.Refresh();
     }
 
     private void Home_Click(object sender, RoutedEventArgs e)
     {
-        Browser?.CoreWebView2?.Navigate(HomeUrl);
+        _tabManager?.Navigate(HomeUrl);
     }
 
-    // Clicking + creates a real new tab in the same window
+    // Opens a true new tab in the same window.
     private async void NewTabButton_Click(object sender, RoutedEventArgs e)
     {
-        await CreateNewTabAsync(HomeUrl);
+        if (_tabManager == null)
+            return;
+
+        await _tabManager.CreateTabAsync(HomeUrl);
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
