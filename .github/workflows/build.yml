@@ -28,14 +28,14 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore dependencies
-        run: dotnet restore TradingBrowser/TradingBrowser.csproj
+        run: dotnet restore TradingBrowser.csproj
 
       - name: Build project
-        run: dotnet build TradingBrowser/TradingBrowser.csproj -c Release --no-restore
+        run: dotnet build TradingBrowser.csproj -c Release --no-restore
 
       - name: Publish self-contained build
         run: >
-          dotnet publish TradingBrowser/TradingBrowser.csproj
+          dotnet publish TradingBrowser.csproj
           -c Release
           -r win-x64
           --self-contained true
