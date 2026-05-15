@@ -1,19 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- Build as a Windows desktop executable -->
     <OutputType>WinExe</OutputType>
+
+    <!-- .NET 8 WPF -->
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+
+    <!-- Language features -->
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
     <!-- Final executable name -->
     <AssemblyName>TTBrowserGPT</AssemblyName>
+
+    <!-- Root namespace used by App.xaml and MainWindow.xaml -->
     <RootNamespace>TradingBrowser</RootNamespace>
+
+    <!-- Recommended settings -->
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- WebView2 browser engine -->
+    <!-- Embedded Chromium browser engine -->
     <PackageReference Include="Microsoft.Web.WebView2"
                       Version="1.0.3351.48" />
   </ItemGroup>
