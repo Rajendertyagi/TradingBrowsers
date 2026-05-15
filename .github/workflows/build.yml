@@ -27,12 +27,15 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      # Restore NuGet packages, including Microsoft.Web.WebView2
       - name: Restore dependencies
         run: dotnet restore TTBrowserGPT.csproj
 
+      # Build (without --no-restore to ensure package references are available)
       - name: Build project
-        run: dotnet build TTBrowserGPT.csproj -c Release --no-restore
+        run: dotnet build TTBrowserGPT.csproj -c Release
 
+      # Publish portable self-contained build
       - name: Publish self-contained build
         run: >
           dotnet publish TTBrowserGPT.csproj
@@ -41,9 +44,9 @@ jobs:
           --self-contained true
           -p:PublishSingleFile=false
           -p:PublishReadyToRun=true
-          -p:IncludeNativeLibrariesForSelfExtract=true
           -o publish
 
+      # Upload artifact
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
