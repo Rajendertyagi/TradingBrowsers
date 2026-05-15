@@ -1,16 +1,49 @@
 name: Build Windows Portable Browser
+
 on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
   workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - run: dotnet publish -c Release -r win-x64 --self-contained true
-      - uses: actions/upload-artifact@v4
+
+      - name: Restore dependencies
+        run: dotnet restore TradingBrowser/TradingBrowser.csproj
+
+      - name: Build project
+        run: dotnet build TradingBrowser/TradingBrowser.csproj -c Release --no-restore
+
+      - name: Publish self-contained build
+        run: >
+          dotnet publish TradingBrowser/TradingBrowser.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=false
+          -o publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
           name: TradingBrowser-win-x64-self-contained
-          path: bin/Release/net8.0-windows/win-x64/publish/
+          path: publish/
