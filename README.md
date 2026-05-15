@@ -1,3 +1,3 @@
-# TTBrowserGPT
+# TTBrowserGPT Full Features
 
-Compact Chrome-style trading browser.
+This package contains the project structure for the full-featured browser.

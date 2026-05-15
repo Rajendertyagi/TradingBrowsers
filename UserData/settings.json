@@ -1,6 +1,1 @@
-{
-  "HomeUrl": "https://www.tradingview.com/",
-  "RestoreSession": true,
-  "AdBlockEnabled": true,
-  "MaxSessionTabs": 4
-}
+{ "HomeUrl": "https://www.tradingview.com/" }

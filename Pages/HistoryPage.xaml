@@ -1,0 +1,19 @@
+<Page x:Class="TradingBrowser.Pages.HistoryPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Title="History"
+      Background="#202124">
+    <Grid Margin="20">
+        <StackPanel>
+            <TextBlock Text="History"
+                       FontSize="28"
+                       FontWeight="SemiBold"
+                       Foreground="White"
+                       Margin="0,0,0,20"/>
+            <ListView x:Name="HistoryList"
+                      Background="#292A2D"
+                      Foreground="White"
+                      BorderBrush="#3C4043"/>
+        </StackPanel>
+    </Grid>
+</Page>
