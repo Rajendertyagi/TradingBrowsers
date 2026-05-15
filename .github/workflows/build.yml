@@ -2,63 +2,39 @@ name: Build TTBrowserGPT
 
 on:
   push:
-    branches:
-      - main
-      - master
-  pull_request:
-    branches:
-      - main
-      - master
+    branches: [main, master]
   workflow_dispatch:
-
-permissions:
-  contents: read
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup .NET 8 SDK
-        uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
 
-      # Clear NuGet caches to avoid stale package issues
-      - name: Clear NuGet caches
+      - name: Clear NuGet cache
         run: dotnet nuget locals all --clear
 
-      # Restore all packages, including Microsoft.Web.WebView2
-      - name: Restore dependencies
-        run: dotnet restore TTBrowserGPT.csproj --force
+      - name: Restore packages
+        run: dotnet restore ./TTBrowserGPT.csproj --force --no-cache
 
-      # Build the WPF application
-      - name: Build project
-        run: dotnet build TTBrowserGPT.csproj -c Release
+      - name: Build
+        run: dotnet build ./TTBrowserGPT.csproj -c Release
 
-      # Publish a fast-starting, portable single EXE
-      - name: Publish optimized build
+      - name: Publish
         run: >
-          dotnet publish TTBrowserGPT.csproj
+          dotnet publish ./TTBrowserGPT.csproj
           -c Release
           -r win-x64
           --self-contained true
-          -p:PublishSingleFile=true
-          -p:PublishTrimmed=true
-          -p:TrimMode=partial
-          -p:PublishReadyToRun=true
-          -p:EnableCompressionInSingleFile=true
-          -p:DebugType=None
-          -p:DebugSymbols=false
-          -p:InvariantGlobalization=true
           -o publish
 
-      # Upload build artifact
-      - name: Upload artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TTBrowserGPT-win-x64-optimized
+          name: TTBrowserGPT-win-x64
           path: publish/
