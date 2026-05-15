@@ -2,7 +2,9 @@ name: Build TTBrowserGPT
 
 on:
   push:
-    branches: [main, master]
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
 jobs:
@@ -10,30 +12,35 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-dotnet@v4
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
 
-      - name: Clear NuGet cache
+      - name: Clear NuGet caches
         run: dotnet nuget locals all --clear
 
-      - name: Restore packages
-        run: dotnet restore ./TTBrowserGPT.csproj --force --no-cache
+      - name: Restore WebView2 package explicitly
+        run: dotnet add TTBrowserGPT.csproj package Microsoft.Web.WebView2 --version 1.0.3351.48
 
-      - name: Build
-        run: dotnet build ./TTBrowserGPT.csproj -c Release
+      - name: Restore dependencies
+        run: dotnet restore TTBrowserGPT.csproj --force --no-cache
+
+      - name: Build project
+        run: dotnet build TTBrowserGPT.csproj -c Release
 
       - name: Publish
         run: >
-          dotnet publish ./TTBrowserGPT.csproj
+          dotnet publish TTBrowserGPT.csproj
           -c Release
           -r win-x64
           --self-contained true
           -o publish
 
-      - name: Upload Artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: TTBrowserGPT-win-x64
